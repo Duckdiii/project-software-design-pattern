@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 // Import 3 cái khung vừa tạo
 import ClientLayout from './pages/client/ClientLayout';
@@ -30,7 +30,7 @@ export default function App() {
 
         {/* NHÓM 2: Đường dẫn dành cho Xác thực (Sài AuthLayout) */}
         <Route path="/auth" element={<AuthLayout />}>
-          <Route path="login" element={<Login />} />
+          <Route index element={<Login />} />
           <Route path="register" element={<Register />} />
         </Route>
 
