@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Factory Pattern — Interactive Diagram</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Syne:wght@400;700;800&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0b0e14;
+    --surface: #131720;
+    --border: #1e2535;
+    --accent: #4fffb0;
+    --accent2: #ff6b6b;
+    --accent3: #ffd166;
+    --blue: #4fc3f7;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --laptop-color: #4fc3f7;
+    --home-color: #c084fc;
+    --factory-color: #4fffb0;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    padding: 32px 24px;
+    overflow-x: hidden;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: clamp(1.4rem, 3vw, 2.2rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, var(--accent), var(--blue));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    margin-bottom: 40px;
+  }
+
+  /* ── Playground ── */
+  .playground {
+    max-width: 900px;
+    margin: 0 auto 48px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+  }
+
+  .playground h2 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 20px;
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 600px) { .controls { grid-template-columns: 1fr; } }
+
+  label { font-size: 0.78rem; color: var(--muted); font-family: 'JetBrains Mono', monospace; display: block; margin-bottom: 6px; }
+
+  select, input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    padding: 10px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  select:focus, input:focus { border-color: var(--accent); }
+
+  .json-input {
+    grid-column: 1 / -1;
+  }
+
+  textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    padding: 12px 14px;
+    outline: none;
+    resize: vertical;
+    min-height: 80px;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus { border-color: var(--accent); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 24px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+    letter-spacing: 0.04em;
+  }
+
+  .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+  .btn:active { transform: translateY(0); }
+
+  /* ── Flow trace ── */
+  .flow {
+    margin-top: 24px;
+    display: none;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .flow.visible { display: flex; }
+
+  .flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    opacity: 0;
+    transform: translateX(-16px);
+    animation: stepIn 0.35s forwards;
+  }
+
+  @keyframes stepIn {
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .flow-step + .flow-step { margin-top: 0; }
+
+  .step-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .step-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+    flex-shrink: 0;
+  }
+
+  .step-connector {
+    width: 2px;
+    flex: 1;
+    min-height: 16px;
+    background: var(--border);
+    margin: 2px 0;
+  }
+
+  .step-content {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+  }
+
+  .step-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 4px;
+  }
+
+  .step-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    color: var(--text);
+  }
+
+  .step-code .kw { color: #c084fc; }
+  .step-code .fn { color: #4fffb0; }
+  .step-code .str { color: #ffd166; }
+  .step-code .cls { color: #4fc3f7; }
+  .step-code .err { color: #ff6b6b; }
+
+  /* ── Validation result ── */
+  .result-box {
+    margin-top: 8px;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    display: none;
+  }
+
+  .result-box.valid {
+    background: rgba(79, 255, 176, 0.08);
+    border: 1px solid rgba(79, 255, 176, 0.3);
+    color: var(--accent);
+    display: block;
+  }
+
+  .result-box.invalid {
+    background: rgba(255, 107, 107, 0.08);
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    color: var(--accent2);
+    display: block;
+  }
+
+  /* ── Architecture diagram ── */
+  .diagram-section {
+    max-width: 900px;
+    margin: 0 auto 48px;
+  }
+
+  .diagram-section h2 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .arch {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr auto 1fr;
+    align-items: start;
+    gap: 0;
+    overflow-x: auto;
+    padding: 8px 0;
+  }
+
+  .arch-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .arch-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 48px;
+    color: var(--muted);
+    font-size: 1.4rem;
+  }
+
+  .class-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    width: 200px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    cursor: default;
+  }
+
+  .class-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 18px rgba(79,255,176,0.1);
+  }
+
+  .class-card.highlight-laptop { border-color: var(--laptop-color); box-shadow: 0 0 14px rgba(79,195,247,0.15); }
+  .class-card.highlight-home   { border-color: var(--home-color);   box-shadow: 0 0 14px rgba(192,132,252,0.15); }
+  .class-card.highlight-mgr    { border-color: var(--factory-color);box-shadow: 0 0 14px rgba(79,255,176,0.15); }
+
+  .card-type {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 6px;
+  }
+
+  .card-name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 8px;
+  }
+
+  .card-method {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    padding: 4px 8px;
+    background: var(--bg);
+    border-radius: 5px;
+    margin-top: 4px;
+    border-left: 2px solid transparent;
+  }
+
+  .card-method.accent { color: var(--accent); border-left-color: var(--accent); }
+
+  .dashed-connector {
+    width: 2px;
+    height: 20px;
+    border-left: 2px dashed var(--border);
+    margin: 0 auto;
+  }
+
+  .inherits-label {
+    font-size: 0.62rem;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-align: center;
+    padding: 2px 8px;
+    border: 1px dashed var(--border);
+    border-radius: 20px;
+  }
+
+  /* file tree */
+  .tree-section {
+    max-width: 900px;
+    margin: 0 auto 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+
+  .tree-section h2 {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 16px;
+  }
+
+  .tree {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 2;
+    color: var(--muted);
+  }
+
+  .tree .folder { color: var(--accent3); }
+  .tree .file   { color: var(--text); }
+  .tree .new    { color: var(--accent); }
+  .tree .new::after { content: ' ← new'; color: var(--accent); opacity: 0.6; font-size: 0.7rem; }
+</style>
+</head>
+<body>
+
+<h1>Factory Method Pattern</h1>
+<p class="subtitle">src/patterns/creational/factory/ — interactive diagram</p>
+
+<!-- Architecture diagram -->
+<div class="diagram-section">
+  <h2>Class Architecture</h2>
+  <div class="arch">
+
+    <!-- Col 1: Product base -->
+    <div class="arch-col">
+      <div class="class-card" id="card-product">
+        <div class="card-type" style="color:var(--muted)">Abstract Base</div>
+        <div class="card-name">Product</div>
+        <div class="card-method">constructor(data)</div>
+        <div class="card-method accent">validateAttributes()</div>
+        <div class="card-method accent">getSummary()</div>
+      </div>
+      <div class="dashed-connector"></div>
+      <div class="inherits-label">extends ↓</div>
+      <div class="dashed-connector"></div>
+      <div style="display:flex;gap:12px;">
+        <div class="class-card" id="card-laptop" style="width:150px">
+          <div class="card-type" style="color:var(--laptop-color)">Concrete</div>
+          <div class="card-name" style="color:var(--laptop-color)">Laptop</div>
+          <div class="card-method">ram, cpu</div>
+          <div class="card-method accent">validateAttributes()</div>
+        </div>
+        <div class="class-card" id="card-home" style="width:150px">
+          <div class="card-type" style="color:var(--home-color)">Concrete</div>
+          <div class="card-name" style="color:var(--home-color)">Smarthome</div>
+          <div class="card-method">network,</div>
+          <div class="card-method">connection_type</div>
+          <div class="card-method accent">validateAttributes()</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="arch-arrow">⟵ creates</div>
+
+    <!-- Col 2: Factories -->
+    <div class="arch-col">
+      <div class="class-card" id="card-lf" style="width:180px">
+        <div class="card-type" style="color:var(--laptop-color)">Factory</div>
+        <div class="card-name" style="color:var(--laptop-color)">LaptopFactory</div>
+        <div class="card-method accent">createProduct(data)</div>
+      </div>
+      <div style="height:30px"></div>
+      <div class="class-card" id="card-hf" style="width:180px">
+        <div class="card-type" style="color:var(--home-color)">Factory</div>
+        <div class="card-name" style="color:var(--home-color)">SmarthomeFactory</div>
+        <div class="card-method accent">createProduct(data)</div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="arch-arrow">⟵ delegates</div>
+
+    <!-- Col 3: Manager -->
+    <div class="arch-col">
+      <div class="class-card highlight-mgr" id="card-mgr" style="width:200px">
+        <div class="card-type" style="color:var(--factory-color)">Manager (Entry Point)</div>
+        <div class="card-name" style="color:var(--factory-color)">ProductFactory</div>
+        <div class="card-method accent">create(type, data)</div>
+        <div class="card-method">getSupportedTypes()</div>
+      </div>
+      <div style="height:16px"></div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--muted);text-align:center;line-height:1.8">
+        type=<span style="color:var(--laptop-color)">'LAPTOP'</span> → LaptopFactory<br>
+        type=<span style="color:var(--home-color)">'SMARTHOME'</span> → SmarthomeFactory
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Playground -->
+<div class="playground">
+  <h2>▶ Live Playground — trace the call flow</h2>
+  <div class="controls">
+    <div>
+      <label>Product Type</label>
+      <select id="typeSelect" onchange="updateTemplate()">
+        <option value="LAPTOP">LAPTOP</option>
+        <option value="SMARTHOME">SMARTHOME</option>
+        <option value="TABLET">TABLET (unknown — triggers error)</option>
+      </select>
+    </div>
+    <div></div>
+    <div class="json-input">
+      <label>Attributes JSON</label>
+      <textarea id="jsonInput">{ "cpu": "Intel Core i7-12700H", "ram": 16 }</textarea>
+    </div>
+  </div>
+  <button class="btn" onclick="runFactory()">⚡ Run ProductFactory.create()</button>
+
+  <div class="flow" id="flow"></div>
+  <div class="result-box" id="resultBox"></div>
+</div>
+
+<!-- File tree -->
+<div class="tree-section">
+  <h2>📁 File Structure</h2>
+  <div class="tree">
+    <span class="folder">src/patterns/creational/factory/</span><br>
+    &nbsp;&nbsp;├── <span class="file new" id="tf1">IProductFactory.js</span><br>
+    &nbsp;&nbsp;├── <span class="file new" id="tf2">LaptopFactory.js</span><br>
+    &nbsp;&nbsp;├── <span class="file new" id="tf3">SmarthomeFactory.js</span><br>
+    &nbsp;&nbsp;└── <span class="file new" id="tf4">ProductFactory.js</span>
+  </div>
+</div>
+
+<script>
+const TEMPLATES = {
+  LAPTOP: '{ "cpu": "Intel Core i7-12700H", "ram": 16 }',
+  SMARTHOME: '{ "network": "HomeNet_5G", "connection_type": "wifi" }',
+  TABLET: '{ "screen": 10.5 }',
+};
+
+const REQUIRED = {
+  LAPTOP: ['ram','cpu'],
+  SMARTHOME: ['network','connection_type'],
+};
+
+function updateTemplate() {
+  const type = document.getElementById('typeSelect').value;
+  document.getElementById('jsonInput').value = TEMPLATES[type] || '{}';
+  document.getElementById('flow').classList.remove('visible');
+  document.getElementById('resultBox').className = 'result-box';
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function runFactory() {
+  const type = document.getElementById('typeSelect').value;
+  let data = {};
+  try { data = JSON.parse(document.getElementById('jsonInput').value); }
+  catch(e) { alert('Invalid JSON'); return; }
+
+  const flow = document.getElementById('flow');
+  const resultBox = document.getElementById('resultBox');
+  flow.innerHTML = '';
+  flow.classList.remove('visible');
+  resultBox.className = 'result-box';
+  await delay(50);
+  flow.classList.add('visible');
+
+  const isKnown = ['LAPTOP','SMARTHOME'].includes(type);
+
+  // Step 1
+  await addStep(flow, 0, '1', '#4fffb0', 'ProductFactory.create() called',
+    `<span class="kw">ProductFactory</span>.<span class="fn">create</span>(<span class="str">'${type}'</span>, data)`, 120);
+
+  if (!isKnown) {
+    await addStep(flow, 1, '!', '#ff6b6b', 'Unknown type — error thrown',
+      `<span class="err">Error: Unknown product type "${type}"</span><br><span class="err">Supported: LAPTOP, SMARTHOME</span>`, 200);
+    resultBox.className = 'result-box invalid';
+    resultBox.textContent = `✗ Error: Unknown product type "${type}". Supported types are: LAPTOP, SMARTHOME`;
+    return;
+  }
+
+  // Step 2
+  const factoryName = type === 'LAPTOP' ? 'LaptopFactory' : 'SmarthomeFactory';
+  const color = type === 'LAPTOP' ? 'var(--laptop-color)' : 'var(--home-color)';
+  await addStep(flow, 1, '2', color === 'var(--laptop-color)' ? '#4fc3f7' : '#c084fc',
+    `Delegates to ${factoryName}`,
+    `<span class="kw">FACTORY_REGISTRY</span>[<span class="str">'${type}'</span>] → <span class="cls">${factoryName}</span>`, 200);
+
+  // Step 3
+  const className = type === 'LAPTOP' ? 'Laptop' : 'Smarthome';
+  await addStep(flow, 2, '3', color === 'var(--laptop-color)' ? '#4fc3f7' : '#c084fc',
+    `${factoryName}.createProduct(data)`,
+    `<span class="kw">new</span> <span class="cls">${className}</span>(data) → instance created`, 200);
+
+  // Step 4: validate
+  const req = REQUIRED[type];
+  const missing = req.filter(k => data[k] === undefined || data[k] === null);
+  const valid = missing.length === 0;
+
+  await addStep(flow, 3, '4', valid ? '#4fffb0' : '#ff6b6b',
+    `instance.validateAttributes()`,
+    valid
+      ? `<span class="fn">✓ All required attributes present</span>: ${req.map(k=>`<span class="str">${k}</span>`).join(', ')}`
+      : `<span class="err">✗ Missing: ${missing.map(k=>`"${k}"`).join(', ')}</span>`,
+    200);
+
+  resultBox.className = valid ? 'result-box valid' : 'result-box invalid';
+  if (valid) {
+    const summary = type === 'LAPTOP'
+      ? `Laptop — CPU: ${data.cpu ?? 'N/A'}, RAM: ${data.ram ?? 'N/A'} GB`
+      : `Smarthome — Network: ${data.network ?? 'N/A'}, Connection: ${data.connection_type ?? 'N/A'}`;
+    resultBox.textContent = `✓ valid: true | ${summary}`;
+  } else {
+    resultBox.textContent = `✗ valid: false | Missing: ${missing.map(k=>`"${k}"`).join(', ')}`;
+  }
+}
+
+async function addStep(container, index, num, dotColor, label, code, delayMs) {
+  await new Promise(r => setTimeout(r, delayMs));
+  const isLast = false;
+  const html = `
+    <div class="flow-step" style="animation-delay:0s">
+      <div class="step-line">
+        <div class="step-dot" style="background:${dotColor}22;color:${dotColor};border:1.5px solid ${dotColor}">${num}</div>
+        <div class="step-connector"></div>
+      </div>
+      <div class="step-content">
+        <div class="step-label" style="color:${dotColor}">${label}</div>
+        <div class="step-code">${code}</div>
+      </div>
+    </div>`;
+  container.insertAdjacentHTML('beforeend', html);
+  container.lastElementChild.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+</body>
+</html>
