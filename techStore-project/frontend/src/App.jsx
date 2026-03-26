@@ -5,31 +5,39 @@ import ClientLayout from './pages/client/ClientLayout';
 import AdminLayout from './pages/admin/AdminLayout';
 import AuthLayout from './pages/auth/AuthLayout';
 
-// Tạo vài component ảo (Dummy) để test thử xem Router chạy đúng không
-const HomePage = () => <h1>Đây là Trang Chủ (Khách mua hàng)</h1>;
-const LoginPage = () => <h1>Đây là Form Đăng Nhập</h1>;
-const Dashboard = () => <h1>Đây là Bảng điều khiển Admin</h1>;
+// Import paages con của từng khung
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
+
+import Dashboard from './pages/admin/Dashboard';
+import ProductManage from './pages/admin/ProductManage';
+
+import ClientHome from './pages/client/ClientHome';
+import Cart from './pages/client/Cart';
+import ProductDetail from './pages/client/ProductDetail';
+
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* NHÓM 1: Đường dẫn dành cho Khách hàng (Sài ClientLayout) */}
-        <Route path="/" element={<ClientLayout />}>
-          <Route index element={<HomePage />} /> {/* Mặc định vào "/" sẽ thấy HomePage */}
-          {/* Mốt bạn chèn thêm <Route path="cart" element={<CartPage />} /> vào đây */}
+        <Route path="/home" element={<ClientLayout />}>
+          <Route index element={<ClientHome />} /> {/* Mặc định vào "/" sẽ thấy HomePage */}
+          <Route path="products/:id" element={<ProductDetail />} /> {/* Trang chi tiết sản phẩm */}
+          <Route path="cart" element={<Cart />} /> {/* Trang giỏ hàng */}
         </Route>
 
         {/* NHÓM 2: Đường dẫn dành cho Xác thực (Sài AuthLayout) */}
         <Route path="/auth" element={<AuthLayout />}>
-          <Route path="login" element={<LoginPage />} />
-          {/* Mốt chèn thêm <Route path="register" element={<RegisterPage />} /> */}
+          <Route path="login" element={<Login />} />
+          <Route path="register" element={<Register />} />
         </Route>
 
         {/* NHÓM 3: Đường dẫn dành cho Admin (Sài AdminLayout) */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
-          {/* Mốt chèn thêm <Route path="products" element={<ProductManage />} /> */}
+          <Route path="products" element={<ProductManage />} />
         </Route>
       </Routes>
     </BrowserRouter>
