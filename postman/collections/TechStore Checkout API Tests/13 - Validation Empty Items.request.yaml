@@ -1,0 +1,25 @@
+$kind: http-request
+name: '13 - Validation Empty Items'
+method: POST
+url: 'http://localhost:5000/api/checkout'
+order: 13000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "items": []
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status is 400", function () {
+          pm.response.to.have.status(400);
+      });
+      pm.test("Error message returned", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("error");
+      });
+    language: text/javascript

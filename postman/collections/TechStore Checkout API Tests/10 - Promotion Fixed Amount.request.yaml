@@ -1,0 +1,33 @@
+$kind: http-request
+name: '10 - Promotion Fixed Amount'
+method: POST
+url: 'http://localhost:5000/api/checkout'
+order: 10000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "items": [
+        { "name": "Laptop", "price": 2000000 }
+      ],
+      "promotionType": "fixed",
+      "promotionValue": 50000
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      pm.test("Discount is fixed 50000", function () {
+          const json = pm.response.json();
+          pm.expect(json.discount).to.eql(50000);
+      });
+      pm.test("Total accounts for discount", function () {
+          const json = pm.response.json();
+          pm.expect(json.total).to.eql(json.subTotal - json.discount + json.tax + json.paymentFee);
+      });
+    language: text/javascript

@@ -1,0 +1,37 @@
+$kind: http-request
+name: '02 - Multiple Items'
+method: POST
+url: 'http://localhost:5000/api/checkout'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "items": [
+        { "name": "iPhone 15", "price": 1000000 },
+        { "name": "Samsung Galaxy S24", "price": 800000 },
+        { "name": "AirPods Pro", "price": 200000 }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      pm.test("SubTotal is sum of all items", function () {
+          const json = pm.response.json();
+          pm.expect(json.subTotal).to.eql(2000000);
+      });
+      pm.test("Items array has 3 entries", function () {
+          const json = pm.response.json();
+          pm.expect(json.items).to.have.lengthOf(3);
+      });
+      pm.test("Total formula is correct", function () {
+          const json = pm.response.json();
+          pm.expect(json.total).to.eql(json.subTotal - json.discount + json.tax + json.paymentFee);
+      });
+    language: text/javascript

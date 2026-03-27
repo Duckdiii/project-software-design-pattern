@@ -1,0 +1,52 @@
+$kind: http-request
+name: '01 - Basic Checkout (Defaults)'
+method: POST
+url: 'http://localhost:5000/api/checkout'
+order: 1000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "items": [
+        { "name": "iPhone 15", "price": 1000000 }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      pm.test("Response has required fields", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("items");
+          pm.expect(json).to.have.property("subTotal");
+          pm.expect(json).to.have.property("discount");
+          pm.expect(json).to.have.property("tax");
+          pm.expect(json).to.have.property("paymentFee");
+          pm.expect(json).to.have.property("total");
+      });
+      pm.test("SubTotal equals item price", function () {
+          const json = pm.response.json();
+          pm.expect(json.subTotal).to.eql(1000000);
+      });
+      pm.test("Default tax is 10% (standard)", function () {
+          const json = pm.response.json();
+          pm.expect(json.tax).to.eql(100000);
+      });
+      pm.test("Default discount is 0 (no promotion)", function () {
+          const json = pm.response.json();
+          pm.expect(json.discount).to.eql(0);
+      });
+      pm.test("Default payment fee is 0 (cash)", function () {
+          const json = pm.response.json();
+          pm.expect(json.paymentFee).to.eql(0);
+      });
+      pm.test("Total = subTotal - discount + tax + paymentFee", function () {
+          const json = pm.response.json();
+          pm.expect(json.total).to.eql(json.subTotal - json.discount + json.tax + json.paymentFee);
+      });
+    language: text/javascript

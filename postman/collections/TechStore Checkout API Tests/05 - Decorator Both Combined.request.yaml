@@ -1,0 +1,36 @@
+$kind: http-request
+name: '05 - Decorator Both Combined'
+method: POST
+url: 'http://localhost:5000/api/checkout'
+order: 5000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "items": [
+        { "name": "iPhone 15", "price": 1000000, "decorators": ["warranty", "screen-protector"] }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      pm.test("Item price includes both decorators (+65000)", function () {
+          const json = pm.response.json();
+          pm.expect(json.items[0].price).to.eql(1065000);
+      });
+      pm.test("Description includes both decorator texts", function () {
+          const json = pm.response.json();
+          pm.expect(json.items[0].description).to.include("Bảo hành mở rộng");
+          pm.expect(json.items[0].description).to.include("Dán màn hình");
+      });
+      pm.test("SubTotal reflects both decorators", function () {
+          const json = pm.response.json();
+          pm.expect(json.subTotal).to.eql(1065000);
+      });
+    language: text/javascript

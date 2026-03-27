@@ -1,0 +1,34 @@
+$kind: http-request
+name: '12 - Payment Credit Card'
+method: POST
+url: 'http://localhost:5000/api/checkout'
+order: 12000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "items": [
+        { "name": "Laptop", "price": 2000000 }
+      ],
+      "paymentType": "creditcard"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      pm.test("Credit card fee is 1.5% + 5000 fixed", function () {
+          const json = pm.response.json();
+          const base = json.subTotal - json.discount + json.tax;
+          const expectedFee = base * 0.015 + 5000;
+          pm.expect(json.paymentFee).to.eql(expectedFee);
+      });
+      pm.test("Total includes payment fee", function () {
+          const json = pm.response.json();
+          pm.expect(json.total).to.eql(json.subTotal - json.discount + json.tax + json.paymentFee);
+      });
+    language: text/javascript

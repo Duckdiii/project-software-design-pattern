@@ -1,0 +1,28 @@
+$kind: http-request
+name: '06 - Tax Standard 10 Percent'
+method: POST
+url: 'http://localhost:5000/api/checkout'
+order: 6000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "items": [
+        { "name": "Laptop", "price": 2000000 }
+      ],
+      "taxType": "standard"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      pm.test("Tax is 10% of subtotal", function () {
+          const json = pm.response.json();
+          pm.expect(json.tax).to.eql(200000);
+      });
+    language: text/javascript

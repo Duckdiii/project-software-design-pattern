@@ -1,0 +1,35 @@
+$kind: http-request
+name: '04 - Decorator Screen Protector'
+method: POST
+url: 'http://localhost:5000/api/checkout'
+order: 4000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "items": [
+        { "name": "iPhone 15", "price": 1000000, "decorators": ["screen-protector"] }
+      ]
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      pm.test("Item price includes screen protector (+15000)", function () {
+          const json = pm.response.json();
+          pm.expect(json.items[0].price).to.eql(1015000);
+      });
+      pm.test("Description includes screen protector text", function () {
+          const json = pm.response.json();
+          pm.expect(json.items[0].description).to.include("Dán màn hình");
+      });
+      pm.test("SubTotal reflects decorated price", function () {
+          const json = pm.response.json();
+          pm.expect(json.subTotal).to.eql(1015000);
+      });
+    language: text/javascript

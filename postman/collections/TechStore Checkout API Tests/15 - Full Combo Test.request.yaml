@@ -1,0 +1,63 @@
+$kind: http-request
+name: '15 - Full Combo Test'
+method: POST
+url: 'http://localhost:5000/api/checkout'
+order: 15000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "items": [
+        { "name": "iPhone 15", "price": 1000000, "decorators": ["warranty", "screen-protector"] },
+        { "name": "AirPods Pro", "price": 200000, "decorators": ["warranty"] }
+      ],
+      "taxType": "reduced",
+      "promotionType": "percentage",
+      "promotionValue": 0.1,
+      "paymentType": "momo"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("Status is 200", function () {
+          pm.response.to.have.status(200);
+      });
+      pm.test("Items array has 2 entries", function () {
+          const json = pm.response.json();
+          pm.expect(json.items).to.have.lengthOf(2);
+      });
+      pm.test("First item has both decorators applied", function () {
+          const json = pm.response.json();
+          pm.expect(json.items[0].price).to.eql(1065000);
+          pm.expect(json.items[0].description).to.include("Bảo hành mở rộng");
+          pm.expect(json.items[0].description).to.include("Dán màn hình");
+      });
+      pm.test("Second item has warranty decorator", function () {
+          const json = pm.response.json();
+          pm.expect(json.items[1].price).to.eql(250000);
+          pm.expect(json.items[1].description).to.include("Bảo hành mở rộng");
+      });
+      pm.test("SubTotal is correct", function () {
+          const json = pm.response.json();
+          pm.expect(json.subTotal).to.eql(1315000);
+      });
+      pm.test("Reduced tax (5%) is correct", function () {
+          const json = pm.response.json();
+          pm.expect(json.tax).to.eql(65750);
+      });
+      pm.test("Percentage discount (10%) is correct", function () {
+          const json = pm.response.json();
+          pm.expect(json.discount).to.eql(131500);
+      });
+      pm.test("MoMo fee (2%) is correct", function () {
+          const json = pm.response.json();
+          pm.expect(json.paymentFee).to.eql(24985);
+      });
+      pm.test("Total is correctly calculated", function () {
+          const json = pm.response.json();
+          pm.expect(json.total).to.eql(1274235);
+      });
+    language: text/javascript
