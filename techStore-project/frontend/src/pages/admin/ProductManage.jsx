@@ -1,56 +1,22 @@
 ﻿import { useMemo, useState } from 'react';
-import { Button, Card, Cascader, Flex, Input, Space, Table, Tag, Typography } from 'antd';
+import {
+    Button,
+    Card,
+    Cascader,
+    Flex,
+    Form,
+    Input,
+    Modal,
+    Select,
+    Space,
+    Table,
+    Tag,
+    Typography,
+} from 'antd';
 
 const { Title, Text } = Typography;
 
-const columns = [
-    {
-        title: 'Product',
-        dataIndex: 'name',
-        key: 'name',
-        render: (text) => <a>{text}</a>,
-    },
-    {
-        title: 'Category',
-        dataIndex: 'category',
-        key: 'category',
-    },
-    {
-        title: 'Price',
-        dataIndex: 'price',
-        key: 'price',
-    },
-    {
-        title: 'Stock',
-        dataIndex: 'stock',
-        key: 'stock',
-        render: (value) => {
-            const color = value <= 5 ? 'red' : value <= 20 ? 'gold' : 'green';
-            return <Tag color={color}>{value}</Tag>;
-        },
-    },
-    {
-        title: 'Status',
-        dataIndex: 'status',
-        key: 'status',
-        render: (status) => {
-            const color = status === 'active' ? 'green' : 'default';
-            return <Tag color={color}>{status.toUpperCase()}</Tag>;
-        },
-    },
-    {
-        title: 'Action',
-        key: 'action',
-        render: (_, record) => (
-            <Space size="middle">
-                <a>Edit {record.name}</a>
-                <a>Delete</a>
-            </Space>
-        ),
-    },
-];
-
-const data = [
+const initialData = [
     {
         key: '1',
         name: 'MacBook Air M3',
@@ -110,8 +76,8 @@ const stockSortOptions = [
 ];
 
 export default function ProductManage() {
-
-    const [selectedRowKeys, setSelectedRowKeys] = useState([]); // dùng để lưu id của những dòng đã được chọn (checkbox) trong table
+    const [products, setProducts] = useState(initialData);
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const [loading, setLoading] = useState(false);
 
     const [keyword, setKeyword] = useState('');
@@ -121,13 +87,33 @@ export default function ProductManage() {
     const [nameSort, setNameSort] = useState(['none']);
     const [stockSort, setStockSort] = useState(['none']);
 
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState(null);
+    const [form] = Form.useForm();
+
     const hasSelected = selectedRowKeys.length > 0;
 
-    const onSelectChange = (newSelectedRowKeys) => { // Khi checkbox của table bị thay đổi (được check hoặc uncheck) thì sẽ gọi hàm này với newSelectedRowKeys là mảng id mới đã được chọn
+    const openEditModal = (record) => {
+        setEditingProduct(record);
+        form.setFieldsValue(record); //record là dữ liệu của nguyên dòng bạn vừa bấm Edit trong Table
+        setIsEditOpen(true);
+    };
+
+    const handleSaveEdit = async () => {
+        const values = await form.validateFields();
+        setProducts((prev) =>
+            prev.map((p) => (p.key === editingProduct.key ? { ...p, ...values } : p))
+        );
+        setIsEditOpen(false);
+        setEditingProduct(null);
+        form.resetFields();
+    };
+
+    const onSelectChange = (newSelectedRowKeys) => {
         setSelectedRowKeys(newSelectedRowKeys);
     };
 
-    const clearSelection = () => { // Xóa selection đã chọn
+    const clearSelection = () => {
         setLoading(true);
         setTimeout(() => {
             setSelectedRowKeys([]);
@@ -137,8 +123,50 @@ export default function ProductManage() {
 
     const rowSelection = {
         selectedRowKeys,
-        onChange: onSelectChange, //hàm được gọi mỗi khi user tick/bỏ tick checkbox ở bảng, để cập nhật lại
+        onChange: onSelectChange,
     };
+
+    const columns = [
+        {
+            title: 'Product',
+            dataIndex: 'name',
+            key: 'name',
+            render: (text) => <a>{text}</a>,
+        },
+        {
+            title: 'Category',
+            dataIndex: 'category',
+            key: 'category',
+        },
+        {
+            title: 'Price',
+            dataIndex: 'price',
+            key: 'price',
+        },
+        {
+            title: 'Stock',
+            dataIndex: 'stock',
+            key: 'stock',
+            render: (value) => {
+                const color = value <= 5 ? 'red' : value <= 20 ? 'gold' : 'green';
+                return <Tag color={color}>{value}</Tag>;
+            },
+        },
+        {
+            title: 'Status',
+            dataIndex: 'status',
+            key: 'status',
+            render: (cellStatus) => {
+                const color = cellStatus === 'active' ? 'green' : 'default';
+                return <Tag color={color}>{cellStatus.toUpperCase()}</Tag>;
+            },
+        },
+        {
+            title: 'Action',
+            key: 'action',
+            render: (_, record) => <a onClick={() => openEditModal(record)}>Edit</a>,
+        },
+    ];
 
     const filteredData = useMemo(() => {
         const selectedCategory = category[0] || 'all';
@@ -147,7 +175,7 @@ export default function ProductManage() {
         const selectedNameSort = nameSort[0] || 'none';
         const selectedStockSort = stockSort[0] || 'none';
 
-        const result = data.filter((item) => {
+        const result = products.filter((item) => {
             const matchKeyword = item.name.toLowerCase().includes(keyword.trim().toLowerCase());
             const matchCategory = selectedCategory === 'all' || item.category === selectedCategory;
             const matchStatus = selectedStatus === 'all' || item.status === selectedStatus;
@@ -173,7 +201,7 @@ export default function ProductManage() {
         }
 
         return result;
-    }, [keyword, category, status, stock, nameSort, stockSort]);
+    }, [products, keyword, category, status, stock, nameSort, stockSort]);
 
     return (
         <Space direction="vertical" size={16} style={{ display: 'flex' }}>
@@ -185,18 +213,42 @@ export default function ProductManage() {
                 <Space>
                     <Button>Import</Button>
                     <Button>Export</Button>
-                    <Button type="primary">Add Product</Button>
+                    <Button type="primary">Edit Product</Button>
                 </Space>
             </Flex>
 
             <Card title="Thanh cong cu loc">
                 <Flex wrap="wrap" gap="small">
-                    <Input placeholder="Search product" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
-                    <Cascader options={categoryOptions} value={category} onChange={setCategory} placeholder="Category" />
-                    <Cascader options={statusOptions} value={status} onChange={setStatus} placeholder="Status" />
+                    <Input
+                        placeholder="Search product"
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                    />
+                    <Cascader
+                        options={categoryOptions}
+                        value={category}
+                        onChange={setCategory}
+                        placeholder="Category"
+                    />
+                    <Cascader
+                        options={statusOptions}
+                        value={status}
+                        onChange={setStatus}
+                        placeholder="Status"
+                    />
                     <Cascader options={stockOptions} value={stock} onChange={setStock} placeholder="Stock" />
-                    <Cascader options={nameSortOptions} value={nameSort} onChange={setNameSort} placeholder="Sort name" />
-                    <Cascader options={stockSortOptions} value={stockSort} onChange={setStockSort} placeholder="Sort stock" />
+                    <Cascader
+                        options={nameSortOptions}
+                        value={nameSort}
+                        onChange={setNameSort}
+                        placeholder="Sort name"
+                    />
+                    <Cascader
+                        options={stockSortOptions}
+                        value={stockSort}
+                        onChange={setStockSort}
+                        placeholder="Sort stock"
+                    />
                 </Flex>
             </Card>
 
@@ -217,6 +269,73 @@ export default function ProductManage() {
                     pagination={{ pageSize: 5 }}
                 />
             </Card>
+
+            <Modal
+                title="Edit Product"
+                open={isEditOpen}
+                onCancel={() => setIsEditOpen(false)}
+                footer={null}
+            >
+                <Form form={form} layout="vertical">
+                    <Form.Item
+                        name="name"
+                        label="Product Name"
+                        rules={[{ required: true, message: 'Please input product name!' }]}
+                    >
+                        <Input />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="category"
+                        label="Category"
+                        rules={[{ required: true, message: 'Please select category!' }]}
+                    >
+                        <Select
+                            options={[
+                                { value: 'Laptop', label: 'Laptop' },
+                                { value: 'Phone', label: 'Phone' },
+                                { value: 'Accessory', label: 'Accessory' },
+                            ]}
+                        />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="price"
+                        label="Price"
+                        rules={[{ required: true, message: 'Please input price!' }]}
+                    >
+                        <Input />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="stock"
+                        label="Stock"
+                        rules={[{ required: true, message: 'Please input stock!' }]}
+                    >
+                        <Input />
+                    </Form.Item>
+
+                    <Form.Item
+                        name="status"
+                        label="Status"
+                        rules={[{ required: true, message: 'Please select status!' }]}
+                    >
+                        <Select
+                            options={[
+                                { value: 'active', label: 'Active' },
+                                { value: 'inactive', label: 'Inactive' },
+                            ]}
+                        />
+                    </Form.Item>
+
+                    <Form.Item>
+                        <Button type="primary" onClick={handleSaveEdit} style={{ marginRight: 8 }}>
+                            Save
+                        </Button>
+                        <Button onClick={() => setIsEditOpen(false)}>Cancel</Button>
+                    </Form.Item>
+                </Form>
+            </Modal>
         </Space>
     );
 }

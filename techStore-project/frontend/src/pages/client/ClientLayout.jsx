@@ -1,20 +1,60 @@
-import { Outlet } from "react-router-dom";
+﻿import { Outlet, useNavigate } from 'react-router-dom';
+import { Input, Layout, Menu } from 'antd';
+
+const { Search } = Input;
+const { Header, Footer } = Layout;
+
+const items = [
+    { key: '/home', label: 'Trang chinh' },
+    { key: '/home/products/1', label: 'Danh muc san pham' },
+    { key: '/home/cart', label: 'Gio hang' },
+];
+
+const onSearch = (value, _e, info) => {
+    console.log(info?.source, value);
+};
 
 export default function ClientLayout() {
+    const navigate = useNavigate();
+
     return (
-        <div>
-            <header style={{ background: '#d82626', padding: '20px' }}>
-                <h2>TechStore - Header Khách hàng</h2>
-            </header>
+        <Layout>
+            <Header
+                style={{
+                    position: 'sticky',
+                    top: 0,
+                    zIndex: 1,
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 12,
+                }}
+            >
+                <div className="demo-logo" />
 
-            {/* <Outlet /> chính là nơi hiển thị trang chủ, trang chi tiết, giỏ hàng... */}
-            <main style={{ minHeight: '80vh', padding: '20px' }}>
-                <Outlet />
-            </main>
+                <Menu
+                    theme="dark"
+                    mode="horizontal"
+                    items={items}
+                    onClick={({ key }) => navigate(key)}
+                    style={{ flex: 1, minWidth: 0 }}
+                />
 
-            <footer style={{ background: '#333', color: '#fff', padding: '20px' }}>
-                <p>TechStore Footer</p>
-            </footer>
-        </div>
+                <Search
+                    placeholder="Tim kiem laptop, dien thoai, phu kien..."
+                    allowClear
+                    enterButton="Search"
+                    size="large"
+                    onSearch={onSearch}
+                    style={{ maxWidth: 420 }}
+                />
+            </Header>
+
+            <Outlet />
+
+            <Footer style={{ textAlign: 'center' }}>
+                Ant Design ©{new Date().getFullYear()} Created by Ant UED
+            </Footer>
+        </Layout>
     );
 }
