@@ -100,7 +100,7 @@ export default function Dashboard() {
         <Space direction="vertical" size={16} style={{ display: 'flex' }}>
             <Header style={{ background: '#fff', padding: '0 16px' }}>
                     <Title level={4} style={{ margin: 0, lineHeight: '64px' }}>
-                        Tong quan he thong
+                        Tổng quan hệ thống
                     </Title>
                 </Header>
             <Row gutter={[16, 16]}>
@@ -115,7 +115,7 @@ export default function Dashboard() {
 
             <Row gutter={[16, 16]}>
                 <Col xs={24} lg={16}>
-                    <Card title="Don hang gan day">
+                    <Card title="Đơn hàng gần đây">
                         <Table columns={columns} dataSource={data} />
                     </Card>
                 </Col>
