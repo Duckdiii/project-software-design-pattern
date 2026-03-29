@@ -7,6 +7,7 @@ const NoPromotionStrategy = require('../patterns/behavioral/strategy/NoPromotion
 const CashPaymentStrategy = require('../patterns/behavioral/strategy/CashPaymentStrategy');
 const MoMoPaymentStrategy = require('../patterns/behavioral/strategy/MoMoPaymentStrategy');
 const CreditCardPaymentStrategy = require('../patterns/behavioral/strategy/CreditCardPaymentStrategy');
+const VNPayPaymentStrategy = require('../patterns/behavioral/strategy/VNPayPaymentStrategy');
 
 class Order {
     constructor({ items = [], taxStrategy = new StandardTaxStrategy(), promotionStrategy = new NoPromotionStrategy(), paymentStrategy = new CashPaymentStrategy() } = {}) {
@@ -63,4 +64,5 @@ module.exports = {
     CashPaymentStrategy,
     MoMoPaymentStrategy,
     CreditCardPaymentStrategy,
+    VNPayPaymentStrategy,
 };
