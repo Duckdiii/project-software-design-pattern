@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VNPay Payment Result</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            padding: 30px;
+            text-align: center;
+        }
+        .success { color: #27ae60; }
+        .error { color: #e74c3c; }
+        h1 { font-size: 28px; margin-bottom: 20px; }
+        .status { font-size: 16px; margin-bottom: 20px; line-height: 1.6; }
+        .details {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: left;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .details pre {
+            font-size: 12px;
+            color: #333;
+            margin: 0;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .back-btn {
+            background: #95a5a6;
+        }
+        .back-btn:hover {
+            background: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // Parse query parameters
+        const params = new URLSearchParams(window.location.search);
+        const responseCode = params.get('vnp_ResponseCode');
+        const orderInfo = params.get('vnp_OrderInfo');
+        const txnRef = params.get('vnp_TxnRef');
+        const amount = params.get('vnp_Amount');
+        const bankCode = params.get('vnp_BankCode');
+        
+        // Format amount
+        const formattedAmount = amount ? (parseInt(amount) / 100).toLocaleString('vi-VN') + ' VND' : 'N/A';
+        
+        const resultDiv = document.getElementById('result');
+        const isSuccess = responseCode === '00';
+        
+        if (isSuccess) {
+            resultDiv.innerHTML = `
+                <h1 class="success">✅ Thanh toán thành công</h1>
+                <div class="status success">
+                    <p>Giao dịch VNPay của bạn đã được xử lý thành công.</p>
+                </div>
+                <div class="details">
+                    <pre>${JSON.stringify({
+                        'Mã giao dịch': txnRef,
+                        'Thông tin đơn': orderInfo,
+                        'Số tiền': formattedAmount,
+                        'Ngân hàng': bankCode || 'N/A',
+                        'Trạng thái': 'Thành công'
+                    }, null, 2)}</pre>
+                </div>
+                <button onclick="location.href='/'">Về trang chủ</button>
+                <button class="back-btn" onclick="history.back()">Quay lại</button>
+            `;
+        } else {
+            const errorMessages = {
+                '01': 'Giao dịch bị từ chối',
+                '02': 'Đơn hàng đã được xử lý',
+                '04': 'Giao dịch bị hủy',
+                '05': 'Giao dịch bị từ chối (1 lần xác nhận)',
+                '06': 'Giao dịch bị từ chối (2 lần xác nhận)',
+                '07': 'Đơn hàng đã được xác nhận thành công tại Ngân hàng',
+                '09': 'Giao dịch bị từ chối (Rủi ro)',
+                '10': 'Giao dịch bị từ chối (Giao dích không hợp lệ)',
+                '11': 'Giao dịch bị từ chối (Mã PIN không hợp lệ)',
+                '12': 'Giao dịch bị từ chối (Thượng hạn thẻ)',
+                '13': 'Giao dịch bị từ chối (Thẻ bị khóa)',
+                '14': 'Giao dịch bị từ chối (Giao dịch rủi ro)',
+                '15': 'Giao dịch bị từ chối (Quý khách vui lòng liên hệ Ngân hàng)'
+            };
+            
+            resultDiv.innerHTML = `
+                <h1 class="error">❌ Thanh toán thất bại</h1>
+                <div class="status error">
+                    <p>${errorMessages[responseCode] || 'Giao dịch không thành công (' + responseCode + ')'}</p>
+                </div>
+                <div class="details">
+                    <pre>${JSON.stringify({
+                        'Mã giao dịch': txnRef || 'N/A',
+                        'Thông tin đơn': orderInfo || 'N/A',
+                        'Mã lỗi': responseCode || 'N/A'
+                    }, null, 2)}</pre>
+                </div>
+                <button onclick="history.back()">Thử lại</button>
+                <button class="back-btn" onclick="location.href='/'">Về trang chủ</button>
+            `;
+        }
+        
+        // Log to console for debugging
+        console.log('VNPay Return Params:', {
+            responseCode,
+            orderInfo,
+            txnRef,
+            amount: formattedAmount,
+            bankCode
+        });
+    </script>
+</body>
+</html>

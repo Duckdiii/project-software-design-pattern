@@ -6,9 +6,9 @@ module.exports = {
     momo: {
         sandbox: {
             enabled: true,
-            partnerCode: 'MOMO',
-            accessKey: process.env.MOMO_ACCESS_KEY || 'F8635FE50F2829C0',
-            secretKey: process.env.MOMO_SECRET_KEY || 'bJiLvbQ54PH28XnSxpAqReOHUw6KP1nV',
+            partnerCode: 'MOMOBKUN20180529',
+            accessKey: process.env.MOMO_ACCESS_KEY || 'klm05TvNBzhg7h7j',
+            secretKey: process.env.MOMO_SECRET_KEY || 'at67qH6mk8w5Y1nAyMoYKMWACiEi2bsa',
             publicKey: process.env.MOMO_PUBLIC_KEY || '',
             endpoint: 'https://test-payment.momo.vn/v2/gateway/api/create',
             redirectUrl: process.env.MOMO_REDIRECT_URL || 'http://localhost:5173/products',
@@ -31,11 +31,11 @@ module.exports = {
         sandbox: {
             enabled: true,
             tmnCode: process.env.VNPAY_TMN_CODE || '2QXVM2PI', // Test merchant code
-            hashSecret: process.env.VNPAY_HASH_SECRET || 'XBNVBFP2WUHJVPNL', // Test hash secret
+            hashSecret: process.env.VNPAY_SECURE_SECRET || 'XBNVBFP2WUHJVPNL', // Test hash secret
             endpoint: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
             apiEndpoint: 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',
             feeRate: 0.01, // 1% fee
-            returnUrl: process.env.VNPAY_RETURN_URL || 'http://localhost:5000/api/vnpay-callback',
+            returnUrl: process.env.VNPAY_RETURN_URL || 'http://localhost:5000/vnpay-return.html',
             ipnUrl: process.env.VNPAY_IPN_URL || 'http://localhost:5000/api/vnpay-ipn',
         },
         production: {

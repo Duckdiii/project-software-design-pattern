@@ -21,6 +21,7 @@ const {
 
 const VNPayPaymentStrategy = require('./src/patterns/behavioral/strategy/VNPayPaymentStrategy');
 const paymentConfig = require('./src/config/payment-config');
+const checkoutRoutes = require('./src/routes/checkoutRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -37,6 +38,9 @@ app.use((req, res, next) => {
 });
 
 app.use(bodyParser.json());
+
+// Serve static files from public folder
+app.use(express.static('public'));
 
 function buildTaxStrategy(type) {
     switch ((type || '').toLowerCase()) {
@@ -96,44 +100,8 @@ function buildPaymentStrategy(type, options = {}) {
     }
 }
 
-app.post('/api/checkout', (req, res) => {
-    const { items = [], taxType = 'standard', promotionType = 'none', promotionValue, paymentType = 'cash', isSandbox = true } = req.body;
-
-    if (!Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({ error: 'items phải là một mảng và không được rỗng.' });
-    }
-
-    const orderItems = items.map((item) => {
-        let product = new ConcreteProduct(item.name, Number(item.price));
-
-        if (item.decorators && Array.isArray(item.decorators)) {
-            if (item.decorators.includes('warranty')) {
-                product = new WarrantyDecorator(product);
-            }
-            if (item.decorators.includes('screen-protector')) {
-                product = new ScreenProtectorDecorator(product);
-            }
-        }
-
-        return product;
-    });
-
-    const order = new Order({
-        items: orderItems,
-        taxStrategy: buildTaxStrategy(taxType),
-        promotionStrategy: buildPromotionStrategy(promotionType, promotionValue),
-        paymentStrategy: buildPaymentStrategy(paymentType, { isSandbox }),
-    });
-
-    const receipt = order.checkout();
-    return res.json({
-        items: orderItems.map((item) => ({
-            description: item.getDescription(),
-            price: item.getPrice(),
-        })),
-        ...receipt,
-    });
-});
+// Old checkout route moved to checkoutRoutes.js
+// POST /api/checkout now uses the new QR code generation system
 
 // VNPay Payment URL Generation
 app.post('/api/vnpay-payment', (req, res) => {
@@ -258,6 +226,9 @@ app.get('/api/payment-status', (req, res) => {
 app.get('/', (req, res) => {
     res.json({ message: 'TechStore backend with strategy + decorator checkout API' });
 });
+
+// Register checkout routes with QR code support
+app.use('/api', checkoutRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

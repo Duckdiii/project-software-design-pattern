@@ -1,3 +1,10 @@
+# Chặn thư mục node_modules ở mọi cấp độ
 node_modules/
+techStore-project/backend/node_modules/
+techStore-project/frontend/node_modules/
+
+# Chặn thư mục cache của Postman
 .postman/
+
+# Chặn file môi trường chứa thông tin nhạy cảm
 .env

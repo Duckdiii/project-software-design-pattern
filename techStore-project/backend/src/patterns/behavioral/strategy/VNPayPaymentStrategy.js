@@ -5,10 +5,10 @@ class VNPayPaymentStrategy extends IPaymentStrategy {
     constructor(feeRate = 0.01, options = {}) {
         super();
         this.feeRate = feeRate;
-        this.isSandbox = options.isSandbox || true;
-        this.tmnCode = options.tmnCode || ''; // VNPay merchant code
-        this.hashSecret = options.hashSecret || '';
-        this.returnUrl = options.returnUrl || 'http://localhost:3000/payment-result';
+        this.isSandbox = options.isSandbox ?? (process.env.VNPAY_NODE_ENV !== 'production');
+        this.tmnCode = options.tmnCode || process.env.VNPAY_TMN_CODE || ''; 
+        this.hashSecret = options.hashSecret || process.env.VNPAY_SECURE_SECRET || '';
+        this.returnUrl = options.returnUrl || process.env.VNPAY_RETURN_URL || 'http://localhost:3000/payment-result';
     }
 
     calculateFee(amount) {
@@ -109,8 +109,7 @@ class VNPayPaymentStrategy extends IPaymentStrategy {
     // Helper: Build sign data from sorted params
     buildSignData(sortedParams) {
         return Object.keys(sortedParams)
-            .map((key) => `${key}=${encodeURIComponent(sortedParams[key])}`)
-            .join('&');
+            .map((key) => `${key}=${sortedParams[key]}`) 
     }
 
     // Helper: Get current datetime in YYYYMMDDHHmmss format

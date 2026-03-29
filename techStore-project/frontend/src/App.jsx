@@ -5,7 +5,7 @@ import ClientLayout from './pages/client/ClientLayout';
 import AdminLayout from './pages/admin/AdminLayout';
 import AuthLayout from './pages/auth/AuthLayout';
 
-// Import paages con của từng khung
+// Import pages con của từng khung
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 
@@ -15,6 +15,7 @@ import ProductManage from './pages/admin/ProductManage';
 import ClientHome from './pages/client/ClientHome';
 import Cart from './pages/client/Cart';
 import ProductDetail from './pages/client/ProductDetail';
+import CheckoutPage from './pages/CheckoutPage';
 
 
 export default function App() {
@@ -39,6 +40,9 @@ export default function App() {
           <Route index element={<Dashboard />} />
           <Route path="products" element={<ProductManage />} />
         </Route>
+
+        {/* Checkout Page với QR Code */}
+        <Route path="/checkout" element={<CheckoutPage />} />
       </Routes>
     </BrowserRouter>
   );
