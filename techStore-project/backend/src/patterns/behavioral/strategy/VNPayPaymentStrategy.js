@@ -7,7 +7,7 @@ class VNPayPaymentStrategy extends IPaymentStrategy {
         this.feeRate = feeRate;
         this.isSandbox = options.isSandbox ?? (process.env.VNPAY_NODE_ENV !== 'production');
         this.tmnCode = options.tmnCode || process.env.VNPAY_TMN_CODE || ''; 
-        this.hashSecret = options.hashSecret || process.env.VNPAY_SECURE_SECRET || '';
+        this.hashSecret = options.hashSecret || process.env.VNPAY_HASH_SECRET || process.env.VNPAY_SECURE_SECRET || '';
         this.returnUrl = options.returnUrl || process.env.VNPAY_RETURN_URL || 'http://localhost:3000/payment-result';
     }
 
@@ -29,42 +29,50 @@ class VNPayPaymentStrategy extends IPaymentStrategy {
             : 'https://api.vnpayment.vn/merchant_webapi/api/transaction';
     }
 
+    encodeVnpValue(value) {
+        return encodeURIComponent(String(value)).replace(/%20/g, '+');
+    }
+
     // Generate VNPay payment URL
     generatePaymentUrl(orderId, amount, orderInfo = 'Thanh toán tại TechStore') {
-        const vnpUrl = new URL(this.getEndpoint());
+        const vnpUrl = this.getEndpoint(); // Lấy URL gốc
         const params = {
             vnp_Version: '2.1.0',
             vnp_Command: 'pay',
             vnp_TmnCode: this.tmnCode,
-            vnp_Amount: Math.round(Number(amount) * 100), // VNPay expects amount in smallest unit (multiply by 100)
+            vnp_Amount: Math.round(Number(amount) * 100),
             vnp_CurrCode: 'VND',
             vnp_TxnRef: `${orderId}-${Date.now()}`,
             vnp_OrderInfo: orderInfo,
-            vnp_OrderType: 'other',
+            vnp_OrderType: '200000',
             vnp_Locale: 'vn',
             vnp_ReturnUrl: this.returnUrl,
             vnp_CreateDate: this.getCurrentDateTime(),
             vnp_IpAddr: '127.0.0.1',
         };
-
-        // Sort parameters alphabetically
+    
+        // 1. Sắp xếp tham số (Bạn đã có hàm sortObject)
         const sortedParams = this.sortObject(params);
+
+        // 2. Tạo chuỗi dữ liệu ký theo format VNPay (encode value, space -> +)
         const signData = this.buildSignData(sortedParams);
+    
+        // 3. Tạo mã băm SHA512
         const hmac = crypto
             .createHmac('sha512', this.hashSecret)
             .update(Buffer.from(signData, 'utf-8'))
             .digest('hex');
-
-        vnpUrl.search = new URLSearchParams({
-            ...sortedParams,
-            vnp_SecureHash: hmac,
-        }).toString();
-
-        return vnpUrl.toString();
+    
+        // 4. Tạo URL cuối cùng theo cùng format encode với signData
+        const searchParams = Object.keys(sortedParams)
+            .map((key) => `${key}=${this.encodeVnpValue(sortedParams[key])}`)
+            .join('&');
+    
+        return `${vnpUrl}?${searchParams}&vnp_SecureHash=${hmac}`;
     }
 
     // Generate transaction request object
-    generateTransactionRequest(orderId, amount, orderInfo = 'Thanh toán tại TechStore') {
+    generateTransactionRequest(orderId, amount, orderInfo = 'techstore.vn') {
         return {
             vnp_Version: '2.1.0',
             vnp_Command: 'pay',
@@ -109,7 +117,8 @@ class VNPayPaymentStrategy extends IPaymentStrategy {
     // Helper: Build sign data from sorted params
     buildSignData(sortedParams) {
         return Object.keys(sortedParams)
-            .map((key) => `${key}=${sortedParams[key]}`) 
+            .map((key) => `${key}=${this.encodeVnpValue(sortedParams[key])}`)
+            .join('&');
     }
 
     // Helper: Get current datetime in YYYYMMDDHHmmss format

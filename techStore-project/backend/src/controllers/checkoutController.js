@@ -3,6 +3,8 @@ const paymentConfig = require('../config/payment-config');
 
 const mockOrders = [];
 
+const encodeVnpValue = (value) => encodeURIComponent(String(value)).replace(/%20/g, '+');
+
 /**
  * Generate Momo QR Code for payment
  */
@@ -123,9 +125,9 @@ const generateVNPayQR = (orderId, amount, orderInfo = 'Thanh toán tại TechSto
             return acc;
         }, {});
 
-        // Build signature data WITHOUT URL encoding
+        // Build signature data theo đúng format VNPay (encode value, space -> +)
         const signData = Object.entries(sortedParams)
-            .map(([key, value]) => `${key}=${value}`)
+            .map(([key, value]) => `${key}=${encodeVnpValue(value)}`)
             .join('&');
 
         console.log('[VNPay] Full SignData:', signData);
@@ -139,18 +141,17 @@ const generateVNPayQR = (orderId, amount, orderInfo = 'Thanh toán tại TechSto
         console.log('[VNPay] Generated SecureHash:', hmac);
         console.log('[VNPay] Using HashSecret:', config.hashSecret);
 
-        // Build URL with encoded parameters
-        const vnpUrl = new URL(config.endpoint);
-        Object.entries(sortedParams).forEach(([key, value]) => {
-            vnpUrl.searchParams.append(key, String(value));
-        });
-        vnpUrl.searchParams.append('vnp_SecureHash', hmac);
+        // Build URL theo query string thủ công để tránh double-encode
+        const queryString = Object.entries(sortedParams)
+            .map(([key, value]) => `${key}=${encodeVnpValue(value)}`)
+            .join('&');
+        const vnpUrl = `${config.endpoint}?${queryString}&vnp_SecureHash=${hmac}`;
 
         console.log('[VNPay] Final payment URL generated');
 
         return {
             success: true,
-            payUrl: vnpUrl.toString(),
+            payUrl: vnpUrl,
             message: 'VNPay payment URL generated',
             orderId: orderId,
             amount: amount

@@ -31,7 +31,7 @@ module.exports = {
         sandbox: {
             enabled: true,
             tmnCode: process.env.VNPAY_TMN_CODE || '2QXVM2PI', // Test merchant code
-            hashSecret: process.env.VNPAY_SECURE_SECRET || 'XBNVBFP2WUHJVPNL', // Test hash secret
+            hashSecret: process.env.VNPAY_HASH_SECRET || process.env.VNPAY_SECURE_SECRET || 'XBNVBFP2WUHJVPNL', // Test hash secret
             endpoint: 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html',
             apiEndpoint: 'https://sandbox.vnpayment.vn/merchant_webapi/api/transaction',
             feeRate: 0.01, // 1% fee
